@@ -1058,12 +1058,26 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   }
 
+  // Build one pattern layer's scene + look at an exact resolution WITHOUT
+  // painting (shared by the SVG/PSD exporters and their live preview).
+  // Visible flag is intentionally ignored — hidden layers can be exported too.
+  function buildSceneForLayer(layer, W, H) {
+    const p = layerParams(layer);
+    const sc = R.buildScene(p, W, H, { budget: layer.animation === 'none' ? 500000 : 200000 });
+    if (!sc) return null;
+    p.colorMap = currentMap(layer);
+    R.colorize(sc, p);
+    const lk = makeLayerLook(layer);
+    return { layer, scene: sc, params: p, look: lk };
+  }
+
   // Build every visible pattern layer fresh at the EXACT export resolution
   // (same geometry math as the preview — scale factor 1:1).
-  function buildExportParts(W, H) {
+  // Optional `include(layer)` predicate overrides the default visibility rule.
+  function buildExportParts(W, H, include) {
     const parts = [];
     for (const layer of LT.patternLayers(project)) {
-      if (!layer.visible || layer.opacity <= 0) continue;
+      if (include ? !include(layer) : (!layer.visible || layer.opacity <= 0)) continue;
       const p = layerParams(layer);
       const staticAnim = layer.animation === 'none';
       const sc = R.buildScene(p, W, H, { budget: staticAnim ? 500000 : 200000 });
@@ -2472,6 +2486,8 @@
     $('pngBtn').onclick = () => { closePops(); exportPNG(); };
     $('gifBtn').onclick = () => { closePops(); exportGIF(); };
     $('apngBtn').onclick = () => { closePops(); exportAPNG(); };
+    $('svgBtn').onclick = () => { closePops(); window.ExportDialog.open('svg'); };
+    $('psdBtn').onclick = () => { closePops(); window.ExportDialog.open('psd'); };
     $('projSaveBtn').onclick = () => {
       downloadBlob(new Blob([JSON.stringify(buildProjectFile(), null, 2)],
         { type: 'application/json' }), `${fileBase()}-project.json`);
@@ -2585,6 +2601,29 @@
     if (narrow.addEventListener) narrow.addEventListener('change', collapseAll);
     else if (narrow.addListener) narrow.addListener(collapseAll); // older API
   }
+
+  // Read-only API for the export modules (SVG/PSD exporters + dialog) and the
+  // QA suite. Exporters must treat the project as immutable: they never call
+  // save() and never mutate layers — all treatment happens on local copies.
+  window.TessellateAPI = {
+    getProject: () => project,
+    SP, selectedLayer: (p) => LT.selectedLayer(p || project),
+    layerParams, currentMap, makeLayerLook,
+    bgFillSpec, paintBackgroundFill, effectiveBgColor,
+    buildSceneForLayer, buildExportParts, compositeComposition,
+    fileBase, downloadBlob,
+    status: (m) => { statusEl.textContent = m; },
+    // QA/agent hook: replace the working project through the same sanitize +
+    // fix path as file loading (no localStorage write, no history entry)
+    setProjectForTest: (obj) => {
+      project = fixProjectRefs(LT.sanitizeProject(obj));
+      cache.clear();
+      drafts.clear();
+      syncControls();
+      refresh();
+      return project;
+    },
+  };
 
   bind();
   initMobileNav();

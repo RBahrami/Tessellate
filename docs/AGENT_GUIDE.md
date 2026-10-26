@@ -403,14 +403,21 @@ flattens it onto black. PNG and APNG keep true RGBA transparency.
 
 ## 8. Output formats
 
-All three formats are offered by the toolbar **Export** menu (the button right
-after **Save**); picking a format starts the export immediately.
+All five formats are offered by the toolbar **Export** menu (the button right
+after **Save**); PNG / GIF / APNG start immediately, while SVG and PSD open an
+options dialog (scope, appearance preset, background handling) with a live
+preview.
 
 | Format | Transparency | Animation | Notes |
 |---|---|---|---|
 | PNG | full RGBA | no | exact `resW × resH`, whole composition |
 | APNG | full RGBA | seamless loop | lossless truecolor, per-frame zlib |
 | GIF | binary (flattened onto black when transparent) | seamless loop | 256 colors + dithering, whole composition |
+| SVG | full RGBA | no (static frame at t=0) | genuine editable vectors: one `<path>` per tile, per-layer `<g>` groups with names/visibility/opacity, native background gradient; appearance presets (outlines-only, monochrome, silhouette, grayscale, custom); effects that SVG cannot express are rasterized per layer or omitted per the fidelity setting |
+| PSD | full RGBA | no (static frame at t=0) | layered Photoshop document via the vendored ag-psd library (MIT, bundled in `js/vendor/`): one editable raster layer per Tessellate layer incl. Background, names/order/visibility/opacity preserved, RLE-compressed, merged composite preview |
 
-Exports always render the **entire layer stack** — never only the selected
-layer — at the exact canvas resolution, matching the live preview.
+Exports always render the **entire layer stack** (SVG/PSD also offer a
+"selected layer only" scope in their dialog) at the exact canvas resolution,
+matching the live preview. The SVG/PSD appearance presets re-color the export
+only — the project JSON, its layers and its palettes are never modified, so
+agent-generated projects can be exported repeatedly with different treatments.

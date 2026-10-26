@@ -90,7 +90,7 @@
     </div>
     <div class="tgroup">
       <div class="popwrap">
-        <button id="exportBtn" class="tbtn" title="Export the wallpaper: PNG image, looping GIF or lossless APNG"><span class="tico">⬇</span><span class="tlabel">Export</span></button>
+        <button id="exportBtn" class="tbtn" title="Export the wallpaper: PNG image, looping GIF, lossless APNG, editable SVG or layered PSD"><span class="tico">⬇</span><span class="tlabel">Export</span></button>
         <div id="exportPop" class="pop popmenu" hidden>
           <div class="pophead">Export wallpaper</div>
           <button id="pngBtn" class="popitem" title="Still image at the exact canvas resolution; true RGBA transparency when the Background layer is hidden or faded">
@@ -104,6 +104,14 @@
           <button id="apngBtn" class="popitem" title="Lossless looping animation; truecolor quality identical to the live preview">
             <span class="pilabel">APNG</span>
             <span class="pidesc">Looping animation · lossless truecolor</span>
+          </button>
+          <button id="svgBtn" class="popitem" title="Editable vector artwork for Illustrator / Inkscape / CorelDRAW — opens the export options dialog; static frame">
+            <span class="pilabel">SVG</span>
+            <span class="pidesc">Editable vectors · layer groups · static frame</span>
+          </button>
+          <button id="psdBtn" class="popitem" title="Layered Photoshop document — one editable raster layer per Tessellate layer — opens the export options dialog; static frame">
+            <span class="pilabel">PSD</span>
+            <span class="pidesc">Layered Photoshop file · editable layers · static frame</span>
           </button>
           <details class="popnote">
             <summary>Set as a live wallpaper</summary>
@@ -541,9 +549,9 @@
 <div id="modalWrap" hidden>
   <div id="aboutCard" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
     <h2 id="aboutTitle">Tessellate</h2>
-    <p class="sub">Geometric wallpaper studio · Einstein hat &amp; 13 tiling families · PNG / GIF / APNG exports</p>
+    <p class="sub">Geometric wallpaper studio · Einstein hat &amp; 13 tiling families · PNG / GIF / APNG / SVG / PSD exports</p>
     <p>A studio for the aperiodic <b>Einstein hat</b> monotile (Smith, Myers, Kaplan &amp; Goodman-Strauss 2023 — <i>An Aperiodic Monotile</i>, arXiv:2303.10798) plus a collection of mathematically verified periodic and composite tilings: honeycombs, kagome, octagon–square, Cairo pentagons (dual of the snub square tiling), herringbone, Penrose rhombs (dual of a de Bruijn pentagrid) and more. Stack pattern layers over a background layer, give each its own tiling, colors, effects and animation, then export or share the result.</p>
-    <p>The project is auto-saved in this browser as you edit. <b>Save</b> downloads it as one <b>JSON</b> file (all layers + custom palettes/gradients) — the format is documented in <b>docs/AGENT_GUIDE.md</b>, so agents can generate wallpapers by writing that file and loading it here. <b>Undo/Redo (Ctrl+Z / Ctrl+Y)</b> reverts any change, including layer operations and randomizers. The <b>Export</b> menu offers PNG, looping GIF and lossless APNG — every format renders the complete layer stack at the resolution set in the Canvas menu. <b>Share</b> uses the operating system share sheet when available: PNG while nothing animates, looping GIF otherwise (falls back to a download where sharing is unsupported).</p>
+    <p>The project is auto-saved in this browser as you edit. <b>Save</b> downloads it as one <b>JSON</b> file (all layers + custom palettes/gradients) — the format is documented in <b>docs/AGENT_GUIDE.md</b>, so agents can generate wallpapers by writing that file and loading it here. <b>Undo/Redo (Ctrl+Z / Ctrl+Y)</b> reverts any change, including layer operations and randomizers. The <b>Export</b> menu offers PNG, looping GIF, lossless APNG, editable <b>SVG</b> vectors and layered <b>PSD</b> documents — SVG/PSD open an options dialog with appearance presets (outlines only, monochrome, silhouette, grayscale, custom) and a live preview; both are static frames at time zero and never modify your project. <b>Share</b> uses the operating system share sheet when available: PNG while nothing animates, looping GIF otherwise (falls back to a download where sharing is unsupported).</p>
     <hr class="aboutrule">
     <div class="credits">
       <p><b>Author &amp; maintainer:</b> Reza Bahrami — <a href="https://github.com/RBahrami" target="_blank" rel="noopener noreferrer">@RBahrami</a></p>
@@ -553,6 +561,98 @@
     <div class="btnrow">
       <button id="resetBtn" class="btn ghost" title="Reset to the default starter project (background + one pattern layer)">Reset project</button>
       <button id="aboutClose" class="btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================== SVG / PSD EXPORT DIALOG ================== -->
+<div id="expWrap" hidden>
+  <div id="expCard" role="dialog" aria-modal="true" aria-labelledby="expTitle">
+    <h2 id="expTitle">Export SVG</h2>
+    <p class="sub" id="expSub">Editable vector artwork · static frame at time zero</p>
+    <div class="row">
+      <label for="expScope">Export scope</label>
+      <select id="expScope">
+        <option value="composition">Entire composition</option>
+        <option value="layer">Selected layer only</option>
+      </select>
+    </div>
+    <div class="row">
+      <label for="expPreset">Appearance preset</label>
+      <select id="expPreset"></select>
+    </div>
+    <p id="expPresetDesc" class="exphint"></p>
+    <div class="row xrow" data-x="mono" hidden>
+      <label for="expMonoColor">Outline color</label>
+      <div class="colorrow">
+        <input type="color" id="expMonoColor" value="#000000">
+        <div class="minisw">
+          <button type="button" class="chip" data-monosw="#000000">Black</button>
+          <button type="button" class="chip" data-monosw="#ffffff">White</button>
+        </div>
+      </div>
+    </div>
+    <div class="row xrow" data-x="sil" hidden>
+      <label for="expSilColor">Silhouette color</label>
+      <input type="color" id="expSilColor" value="#111111">
+    </div>
+    <div class="row xrow" data-x="fill" hidden>
+      <label for="expFillMode">Fill</label>
+      <div class="colorrow">
+        <select id="expFillMode">
+          <option value="original">Original colors</option>
+          <option value="none">Transparent (none)</option>
+          <option value="custom">Custom color</option>
+        </select>
+        <input type="color" id="expFillColor" value="#5bc8ff" hidden>
+      </div>
+    </div>
+    <div class="row xrow" data-x="outline" hidden>
+      <label for="expOutlineMode">Outline</label>
+      <div class="colorrow">
+        <select id="expOutlineMode">
+          <option value="original">Original colors</option>
+          <option value="none">None</option>
+          <option value="custom">Custom color</option>
+        </select>
+        <input type="color" id="expOutlineColor" value="#101014" hidden>
+      </div>
+    </div>
+    <div class="row">
+      <label for="expBgMode">Background</label>
+      <div class="colorrow">
+        <select id="expBgMode">
+          <option value="original">Original background</option>
+          <option value="none">Transparent</option>
+          <option value="custom">Custom color</option>
+        </select>
+        <input type="color" id="expBgColor" value="#0b1020" hidden>
+      </div>
+    </div>
+    <div class="row">
+      <label for="expLineWidth">Outline width override <span class="exphintinline">(blank = project setting)</span></label>
+      <input type="number" id="expLineWidth" min="0" max="40" step="0.1" placeholder="—">
+    </div>
+    <div class="row">
+      <label for="expHiddenSel">Hidden layers</label>
+      <select id="expHiddenSel">
+        <option value="omit">Omit hidden layers</option>
+        <option value="include">Include them (kept hidden)</option>
+      </select>
+    </div>
+    <div class="row xrow" data-x="fx" hidden>
+      <label for="expEffects">Effect fidelity</label>
+      <select id="expEffects">
+        <option value="raster">Best fidelity — rasterize affected layers</option>
+        <option value="vector">Best editability — omit unsupported effects</option>
+      </select>
+    </div>
+    <p id="expWarn" class="expwarn" hidden></p>
+    <canvas id="expPreview" width="512" height="288"></canvas>
+    <p class="exphint">Live preview of the selected treatment (static frame). The exported file uses the full canvas resolution. Animations are not preserved in SVG/PSD — every layer is frozen at time zero without changing the project.</p>
+    <div class="btnrow">
+      <button id="expCancel" class="btn ghost">Cancel</button>
+      <button id="expGo" class="btn">Export SVG</button>
     </div>
   </div>
 </div>
@@ -569,6 +669,12 @@
 <script src="js/apng.js"></script>
 <script src="js/infotips.js"></script>
 <script src="js/render.js"></script>
+<script src="js/export-treatment.js"></script>
+<script src="js/export-raster.js"></script>
+<script src="js/export-svg.js"></script>
+<script src="js/vendor/ag-psd.js"></script>
+<script src="js/export-psd.js"></script>
 <script src="js/app.js"></script>
+<script src="js/export-dialog.js"></script>
 </body>
 </html>

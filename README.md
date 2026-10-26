@@ -9,8 +9,11 @@ Joseph Samuel Myers, C. S. Kaplan and Chaim Goodman-Strauss) — **plus 13 more
 mathematically verified tiling families** — and composes them in a **multi-layer
 compositor**: stack up to 8 pattern layers over a permanent background layer, each
 with its own tiling, color theme, effects and animation. Every image can be exported
-as a full-resolution **PNG**, a **looping animated GIF**, or a **lossless APNG**
-(pixel-perfect animated PNG) — all encoded entirely in the browser and playable
+as a full-resolution **PNG**, a **looping animated GIF**, a **lossless APNG**
+(pixel-perfect animated PNG), a genuine **editable SVG** (vector paths for
+Illustrator / Inkscape / CorelDRAW), or a **layered PSD** (one editable raster
+layer per Tessellate layer for Photoshop / Photopea / Krita / GIMP) — all
+encoded entirely in the browser and playable
 anywhere with no extra software, plugins or codecs.
 
 ![Tessellate — desktop](docs/img/hero.png)
@@ -164,8 +167,11 @@ The removed v1 animations (Cascade, Drift, Hue cycle, Pulse) are gone.
 - Per layer: tile scale, rotation, tile gap, outline width/color, seeded
   randomization.
 - The **Export** button in the toolbar (right after **Save**) opens a menu that
-  asks about the format — pick one and the export starts immediately; the menu
-  also carries a *Set as a live wallpaper* note with per-platform instructions.
+  asks about the format — PNG / GIF / APNG start immediately, while **SVG and
+  PSD open an export-options dialog** (scope, appearance preset, background
+  handling, hidden layers, and for SVG the effect-fidelity mode) with a live
+  preview; the menu also carries a *Set as a live wallpaper* note with
+  per-platform instructions.
   **All exports render the complete layer stack at the exact canvas resolution
   you chose** — animated exports rebuild every layer at that resolution (1:1,
   same geometry math as the preview) and capture exactly one seamless combined
@@ -183,6 +189,32 @@ The removed v1 animations (Cascade, Drift, Hue cycle, Pulse) are gone.
   fallback). **Pixel-perfect**: decoded frames match the rendered canvas
   exactly — verified byte-for-byte in QA, alpha channel included. Plays in all
   modern browsers, macOS previews, Telegram/Discord, and most image viewers.
+- **SVG (editable vectors)** — genuine vector export: every tile becomes an
+  editable SVG `<path>` (line patterns become stroked `<path>` strokes, never
+  filled polygons), grouped per layer with layer names, order, visibility and
+  opacity preserved; the background exports as a solid fill or a native SVG
+  gradient. Correct `viewBox`/dimensions, 2-decimal precision, XML-escaped
+  names. For editing in Illustrator, Inkscape, CorelDRAW, Affinity and any
+  vector tool. Static frame at time zero — animations are not serialized.
+  Blur / glow / drop-shadow become native SVG filters; effects SVG cannot
+  reproduce faithfully (grain, sheen, iridescence, chromatic aberration,
+  scanlines, conic gradients) are **rasterized per affected layer only**
+  (fidelity mode) or omitted (editability mode) — the dialog warns and the
+  file's `<desc>` states exactly what happened. Never a canvas screenshot.
+- **PSD (layered Photoshop document)** — written with the vendored ag-psd
+  library (MIT, bundled locally — no CDN, works offline): one independently
+  editable raster layer per Tessellate layer including the Background layer,
+  with layer names, stacking order, visibility and opacity preserved as
+  editable Photoshop properties, RLE-compressed channel data and a merged
+  composite preview. Static frame at time zero. Opens in Photoshop, Photopea,
+  Krita and GIMP.
+- **Export treatments (SVG & PSD)** — seven appearance presets shared by both
+  formats: Full Color, Outlines Only, Monochrome Outlines, Fills Only,
+  Monochrome Silhouette, Grayscale (luminance-based) and a Custom Treatment
+  with independent fill / outline / background choices. Treatments are applied
+  to the export only — the project, its layers, palettes and gradients are
+  never modified — and the last-used options are remembered separately for SVG
+  and PSD.
 - Tile budgets keep previews responsive; oversized requests are coarsened
   automatically with a status note.
 
@@ -226,7 +258,8 @@ Background layer, Visual effects, Animation):
   ONE undo step; up to 60 steps are kept; a new edit after an undo discards
   the redo tail. Unsaved palette/gradient drafts are snapshot too, so even
   those are undoable. Buttons show tooltips naming the next undo/redo step.
-- **Export** — opens the format menu (PNG / GIF / APNG) described above.
+- **Export** — opens the format menu (PNG / GIF / APNG / SVG / PSD) described
+  above; SVG and PSD continue into the export-options dialog.
 - **Share** — hands the wallpaper to the operating system's share sheet
   (`navigator.share`): a **PNG** while nothing animates, a seamless **GIF**
   otherwise — with a graceful fallback to a normal download on browsers or
